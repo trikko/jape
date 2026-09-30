@@ -1,0 +1,9 @@
+{
+	"name": "01_helloworld",
+	"description": "The smallest thing you can do with jape: connect, ask, print",
+	"license": "MIT",
+	"targetType": "executable",
+	"dependencies": {
+		"jape": { "path": "../../" }
+	}
+}

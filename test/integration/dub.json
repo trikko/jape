@@ -1,0 +1,9 @@
+{
+	"name": "integration",
+	"description": "Exercises every part of jape against a real database",
+	"license": "MIT",
+	"targetType": "executable",
+	"dependencies": {
+		"jape": { "path": "../../" }
+	}
+}

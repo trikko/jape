@@ -1,0 +1,10 @@
+{
+	"name": "02_web_crud",
+	"description": "A small notes app on serverino, as a showcase for jape",
+	"license": "MIT",
+	"targetType": "executable",
+	"dependencies": {
+		"jape": { "path": "../../" },
+		"serverino": "~>0.8"
+	}
+}

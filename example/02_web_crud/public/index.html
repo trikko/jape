@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notes · jape</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="top">
+  <h1>Notes</h1>
+  <p class="sub">jape · serverino · PostgreSQL</p>
+</header>
+
+<p id="message" class="note-flash" hidden></p>
+
+<form id="compose" class="card compose">
+  <input name="title" placeholder="A new note" required maxlength="200" autocomplete="off">
+  <textarea name="body" placeholder="Details, optional" rows="1"></textarea>
+  <button class="primary" type="submit">Add</button>
+</form>
+
+<form id="filters" class="card filters">
+  <input name="q" placeholder="Search…" autocomplete="off">
+  <select name="since">
+    <option value="">Any time</option>
+    <option value="1 day">Past day</option>
+    <option value="7 days">Past week</option>
+    <option value="30 days">Past month</option>
+  </select>
+  <button type="submit">Filter</button>
+  <a id="reset" class="clear" href="#" hidden>reset</a>
+</form>
+
+<p id="meta" class="meta"></p>
+<div id="list"></div>
+
+<footer class="bottom">
+  full-text search runs in Postgres: a generated <code>tsvector</code> column, a
+  GIN index, ranking and the highlighting you see above ·
+  served by worker <span id="worker">…</span> ·
+  <a id="json" href="/api/notes">JSON</a>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

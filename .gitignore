@@ -1,0 +1,20 @@
+# dub
+.dub/
+bin/
+dub.selections.json
+docs.json
+__dummy.html
+
+# build output
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+
+# example and test executables
+/example/01_helloworld/01_helloworld
+/example/02_web_crud/02_web_crud
+/test/integration/integration

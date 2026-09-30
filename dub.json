@@ -1,0 +1,20 @@
+{
+	"name": "jape",
+	"description": "PostgreSQL (Postgres) database client for D: a thin, idiomatic libpq wrapper via ImportC. SQL with bound parameters, ranges, row streaming, prepared statements, transactions, COPY, exact numeric",
+	"authors": ["Andrea Fontana"],
+	"copyright": "Copyright © 2026, Andrea Fontana",
+	"license": "MIT",
+	"homepage": "https://github.com/trikko/jape",
+
+	"targetType": "library",
+	"targetPath": "bin",
+	"sourcePaths": ["source"],
+	"importPaths": ["source"],
+	"sourceFiles": ["source/pq.c"],
+
+	"libs": ["pq"],
+
+	"dflags-linux": ["-P=-I/usr/include/postgresql"],
+	"dflags-osx": ["-P=-I/opt/homebrew/opt/libpq/include", "-P=-I/usr/local/opt/libpq/include"],
+	"lflags-osx": ["-L/opt/homebrew/opt/libpq/lib", "-L/usr/local/opt/libpq/lib"]
+}

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    name: Linux / ${{ matrix.dc }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dc: [dmd-latest, ldc-latest]
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      JAPE_CONNINFO: host=127.0.0.1 port=55432 user=postgres password=secret dbname=postgres
+      JAPE_TEST_CONNINFO: host=127.0.0.1 port=55432 user=postgres password=secret dbname=postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libpq
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ${{ matrix.dc }}
+
+      - name: Build
+        run: dub build
+
+      - name: Unit tests
+        run: dub test
+
+      - name: Integration test
+        working-directory: test/integration
+        run: dub run
+
+      - name: Examples
+        run: |
+          (cd example/01_helloworld && dub run)
+          (cd example/02_web_crud && dub build)
+
+  macos:
+    name: macOS / ldc-latest
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libpq
+        run: brew install libpq
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ldc-latest
+
+      - name: Build
+        run: dub build
+
+      - name: Unit tests (no server)
+        run: dub test
