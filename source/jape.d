@@ -1,21 +1,10 @@
 /**
- * jape — Just Another Postgres Elephant.
+ * A PostgreSQL client for D.
  *
- * A thin, idiomatic D wrapper over libpq, imported with ImportC
- * (`import jape_pq;` → jape_pq.c → libpq-fe.h). No hand-written bindings.
- *
- * Core idea: separate WHO OWNS from WHO ITERATES.
- *   - types that own a session resource (Connection, Transaction, CopyIn) are
- *     non-copyable and release it in their destructor;
- *   - a result is reference-counted: Result, its Rows and every Row and Field
- *     taken from them share it, so ranges stay lightweight, copyable views
- *     and std.algorithm and std.range compose without friction.
- *
- * Declared limits: text format only (no binary), no async API,
- * no LISTEN/NOTIFY, no pipeline mode.
- *
- * Caveat: Query and Transaction hold a Connection* — keep the connection
- * still (pass it by ref) while queries are alive, do not move it.
+ * Open a `Connection`, run a statement with its values, and read the answer
+ * the way that suits it: one value, all the rows, or one row at a time — as
+ * rows, or straight into your own structs. The values always travel apart
+ * from the SQL, so they can never turn into it.
  *
  * Example:
  * ---
@@ -23,17 +12,34 @@
  *
  * auto db = Connection("host=localhost dbname=app user=app");
  *
- * db.exec("insert into users(name, age) values($1, $2)", "Ada", 36);
- * auto adults = db.scalar!long("select count(*) from users where age >= $1", 18);
+ * db.exec("insert into users(name, age) values($(DOLLAR)1, $(DOLLAR)2)", "Ada", 36);
+ * auto adults = db.scalar!long("select count(*) from users where age >= $(DOLLAR)1", 18);
  *
  * foreach (u; db.stream!User("select id, name, age from users order by id"))
  *     writeln(u.name);
  * ---
  *
+ * Where to start:
+ * $(UL
+ *   $(LI `Connection` — `exec`, `scalar` and `stream`, the three ways to run a statement;)
+ *   $(LI `Query` — for when the values come from different places: `db.sql(...).bind(...)`;)
+ *   $(LI `Transaction` and `Connection.transact` — all or nothing, and retried when the server asks;)
+ *   $(LI `CopyIn` — loading many rows fast;)
+ *   $(LI `Numeric` — money and other exact decimals;)
+ *   $(LI `PgException` — everything the server said when something went wrong.)
+ * )
+ *
+ * jape is a thin layer over libpq, which it reads through ImportC: no
+ * hand-written bindings, and `import jape_pq;` reaches all of libpq when you
+ * need something this module does not wrap.
+ *
  * See_Also:
  *   $(LINK2 https://github.com/trikko/jape, the README) for a guided tour,
  *   $(LINK2 https://trikko.github.io/jape/llms-full.txt, llms-full.txt) for
  *   the whole API in one file.
+ *
+ * Macros:
+ *   DOLLAR = $
  */
 module jape;
 
@@ -1421,7 +1427,7 @@ struct Query
         return this;
     }
 
-    /// Named binding: .bind("age", 18), .bind(":age", 18), .bind("$1", 18)
+    /// Named binding: .bind("age", 18), .bind(":age", 18), .bind("$(DOLLAR)1", 18)
     ref Query bind(T)(string placeholder, T value) return
     {
         auto name = placeholder.startsWith(":") ? placeholder[1 .. $] : placeholder;
@@ -2059,7 +2065,7 @@ struct PreparedStatement
     /// ditto
     Query bind(T)(string placeholder, T value) { auto q = fresh(); q.bind(placeholder, value); return q; }
 
-    /// Runs it with every value on the spot, bound to $1, $2… in order.
+    /// Runs it with every value on the spot, bound to $(DOLLAR)1, $(DOLLAR)2… in order.
     Result exec(Args...)(Args args)
     {
         auto q = fresh();
@@ -2119,7 +2125,13 @@ private extern(C) void noticeTrampoline(void* arg, const(char)* message) nothrow
     catch (Exception) {}
 }
 
-/// Owns the PGconn. Non-copyable; the destructor calls PQfinish.
+/**
+ * A connection to the server, closed by its destructor.
+ *
+ * It cannot be copied: pass it by `ref`. The queries, transactions and
+ * streams made from it refer back to it, so keep it where it is while they are
+ * in use — do not move it into another variable in the meantime.
+ */
 struct Connection
 {
     private PGconn* handle;

@@ -95,7 +95,7 @@ document.getElementById('symbolSearchPane').style.display = 'block';</script>
 		</nav>
 		<div id="main-contents">
 			<div>
-				<h1>Struct Connection</h1><p>Owns the PGconn. Non-copyable; the destructor calls PQfinish.
+				<h1>Struct Connection</h1><p>A connection to the server, closed by its destructor.
 </p>
 				<div class="prototype">
 					<code class="lang-d">
@@ -104,7 +104,12 @@ document.getElementById('symbolSearchPane').style.display = 'block';</script>
 						</div>
 					</code>
 				</div>
-				
+				<section><p>It cannot be copied: pass it by <code class="lang-d"><span class="kwd">ref</span></code>. The queries, transactions and
+ streams made from it refer back to it, so keep it where it is while they are
+ in use — do not move it into another variable in the meantime.
+</p>
+</section>
+
 				<section><h2>Constructors</h2>
 					<table>
 						<col class="caption"/>

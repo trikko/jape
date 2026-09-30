@@ -95,38 +95,38 @@ document.getElementById('symbolSearchPane').style.display = 'block';</script>
 		</nav>
 		<div id="main-contents">
 			<div>
-				<h1>Module jape</h1><p>jape — Just Another Postgres Elephant.
-</p><section><p>A thin, idiomatic D wrapper over libpq, imported with ImportC
- (<code class="lang-d"><span class="kwd">import </span><span class="pln">jape_pq</span><span class="pun">;</span></code> → jape_pq.c → libpq-fe.h). No hand-written bindings.
-</p>
-
-<p> Core idea: separate WHO OWNS from WHO ITERATES.
-   - types that own a session resource (Connection, Transaction, CopyIn) are
-     non-copyable and release it in their destructor;
-   - a result is reference-counted: Result, its Rows and every Row and Field
-     taken from them share it, so ranges stay lightweight, copyable views
-     and std.algorithm and std.range compose without friction.
-</p>
-
-<p> Declared limits: text format only (no binary), no async API,
- no LISTEN/NOTIFY, no pipeline mode.
+				<h1>Module jape</h1><p>A PostgreSQL client for D.
+</p><section><p>Open a <code class="lang-d"><a href="./jape/Connection.html"><span class="typ">Connection</span></a></code>, run a statement with its values, and read the answer
+ the way that suits it: one value, all the rows, or one row at a time — as
+ rows, or straight into your own structs. The values always travel apart
+ from the SQL, so they can never turn into it.
 </p>
 </section>
-<section><section><h2>Caveat</h2>
-<p>Query and Transaction hold a Connection* — keep the connection
- still (pass it by ref) while queries are alive, do not move it.
-</p>
-</section>
-<section><h2>Example</h2>
+<section><section><h2>Example</h2>
 <pre class="code"><code class="lang-d"><span class="kwd">struct </span><span class="typ">User </span><span class="pun">{ </span><span class="typ">int </span><span class="pln">id</span><span class="pun">; </span><span class="typ">string </span><span class="pln">name</span><span class="pun">; </span><span class="typ">int </span><span class="pln">age</span><span class="pun">; }
 
 </span><span class="kwd">auto </span><span class="pln">db </span><span class="pun">= <a href="./jape/Connection.html"></span><span class="typ">Connection</span></a><span class="pun">(</span><span class="str">"host=localhost dbname=app user=app"</span><span class="pun">);
 
-</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">exec</span><span class="pun">(</span><span class="str">"insert into users(name, age) values(, )"</span><span class="pun">, </span><span class="str">"Ada"</span><span class="pun">, </span><span class="lit">36</span><span class="pun">);
-</span><span class="kwd">auto </span><span class="pln">adults </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">scalar</span><span class="pun">!</span><span class="typ">long</span><span class="pun">(</span><span class="str">"select count(*) from users where age &gt;= "</span><span class="pun">, </span><span class="lit">18</span><span class="pun">);
+</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">exec</span><span class="pun">(</span><span class="str">"insert into users(name, age) values($1, $2)"</span><span class="pun">, </span><span class="str">"Ada"</span><span class="pun">, </span><span class="lit">36</span><span class="pun">);
+</span><span class="kwd">auto </span><span class="pln">adults </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">scalar</span><span class="pun">!</span><span class="typ">long</span><span class="pun">(</span><span class="str">"select count(*) from users where age &gt;= $1"</span><span class="pun">, </span><span class="lit">18</span><span class="pun">);
 
 </span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">u</span><span class="pun">; </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">stream</span><span class="pun">!</span><span class="typ">User</span><span class="pun">(</span><span class="str">"select id, name, age from users order by id"</span><span class="pun">))
     </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">u<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">);</span></code></pre>
+
+<p> Where to start:
+ <ul>   <li><code class="lang-d"><a href="./jape/Connection.html"><span class="typ">Connection</span></a></code> — <code class="lang-d"><span class="pln">exec</span></code>, <code class="lang-d"><span class="pln">scalar</span></code> and <code class="lang-d"><span class="pln">stream</span></code>, the three ways to run a statement;</li>
+   <li><code class="lang-d"><a href="./jape/Query.html"><span class="typ">Query</span></a></code> — for when the values come from different places: <code class="lang-d"><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">sql</span><span class="pun">(...)<wbr/>.</span><span class="pln">bind</span><span class="pun">(...)</span></code>;</li>
+   <li><code class="lang-d"><a href="./jape/Transaction.html"><span class="typ">Transaction</span></a></code> and <code class="lang-d"><a href="./jape/Connection.transact.html"><span class="typ">Connection<wbr/></span><span class="pun">.</span><span class="pln">transact</span></a></code> — all or nothing, and retried when the server asks;</li>
+   <li><code class="lang-d"><a href="./jape/CopyIn.html"><span class="typ">CopyIn</span></a></code> — loading many rows fast;</li>
+   <li><code class="lang-d"><a href="./jape/Numeric.html"><span class="typ">Numeric</span></a></code> — money and other exact decimals;</li>
+   <li><code class="lang-d"><a href="./jape/PgException.html"><span class="typ">PgException</span></a></code> — everything the server said when something went wrong.</li>
+ </ul>
+</p>
+
+<p> jape is a thin layer over libpq, which it reads through ImportC: no
+ hand-written bindings, and <code class="lang-d"><span class="kwd">import </span><span class="pln">jape_pq</span><span class="pun">;</span></code> reaches all of libpq when you
+ need something this module does not wrap.
+</p>
 </section>
 <section><h2>See Also</h2>
 <p><a href="https://github.com/trikko/jape">the README</a> for a guided tour,
@@ -193,7 +193,7 @@ document.getElementById('symbolSearchPane').style.display = 'block';</script>
 									<a id="Connection" class="public" href="./jape/Connection.html">Connection</a>
 								</code>
 							</td>
-							<td>Owns the PGconn. Non-copyable; the destructor calls PQfinish.
+							<td>A connection to the server, closed by its destructor.
 </td>
 						</tr>
 						<tr>
