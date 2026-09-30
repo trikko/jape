@@ -2,7 +2,7 @@
  * jape — Just Another Postgres Elephant.
  *
  * A thin, idiomatic D wrapper over libpq, imported with ImportC
- * (`import pq;` → pq.c → libpq-fe.h). No hand-written bindings.
+ * (`import jape_pq;` → jape_pq.c → libpq-fe.h). No hand-written bindings.
  *
  * Core idea: separate WHO OWNS from WHO ITERATES.
  *   - types that own a session resource (Connection, Transaction, CopyIn) are
@@ -16,10 +16,28 @@
  *
  * Caveat: Query and Transaction hold a Connection* — keep the connection
  * still (pass it by ref) while queries are alive, do not move it.
+ *
+ * Example:
+ * ---
+ * struct User { int id; string name; int age; }
+ *
+ * auto db = Connection("host=localhost dbname=app user=app");
+ *
+ * db.exec("insert into users(name, age) values($1, $2)", "Ada", 36);
+ * auto adults = db.scalar!long("select count(*) from users where age >= $1", 18);
+ *
+ * foreach (u; db.stream!User("select id, name, age from users order by id"))
+ *     writeln(u.name);
+ * ---
+ *
+ * See_Also:
+ *   $(LINK2 https://github.com/trikko/jape, the README) for a guided tour,
+ *   $(LINK2 https://trikko.github.io/jape/llms-full.txt, llms-full.txt) for
+ *   the whole API in one file.
  */
 module jape;
 
-import pq;
+import jape_pq;
 
 import std.algorithm;
 import std.array;
@@ -38,7 +56,7 @@ import std.uni : sicmp;
 
 // On some platforms (macOS) the C headers declare their own size_t, which pq
 // re-exports and which then clashes with D's: the local alias settles it.
-alias size_t = object.size_t;
+private alias size_t = object.size_t;
 
 // ImportC turns simple object-like macros into manifest constants; should that
 // ever stop being true, these fallbacks keep the module compiling.
@@ -93,15 +111,18 @@ class PgException : Exception
     string detail;      /// A second, more specific line. Often names the offending value.
     string hint;        /// What the server suggests doing about it.
     string context;     /// The call stack, when the error came from a function or trigger.
-    string schema;      /// Schema, table, column, constraint and data type involved,
-    string table;       /// as far as the server chose to identify them. Filled in
-    string column;      /// mostly by integrity-constraint errors.
-    string constraint;
-    string dataType;
+    // Schema, table, column, constraint and data type involved, as far as the
+    // server chose to identify them: filled in mostly by integrity-constraint errors.
+    string schema;      /// The schema of the object involved.
+    string table;       /// The table involved.
+    string column;      /// The column involved.
+    string constraint;  /// The constraint that was broken, e.g. "users_email_key".
+    string dataType;    /// The data type involved.
 
     /// 1-based character offset into the statement, 0 when the server gave none.
     int position;
 
+    /// Errors from the server are built by jape; this is here for your own.
     this(string msg, string sqlstate = null, string file = __FILE__, size_t line = __LINE__)
     {
         super(msg, file, line);
@@ -241,6 +262,7 @@ struct Field
         this.col = col;
     }
 
+    /// Whether the value is SQL NULL.
     @property bool isNull() { return PQgetisnull(res, row, col) != 0; }
 
     /// A NON-owning view over the result bytes. Does not outlive the PGresult.
@@ -250,7 +272,9 @@ struct Field
         return p[0 .. PQgetlength(res, row, col)];
     }
 
+    /// The OID of the column's type, as in `pg_type`.
     @property uint typeOid() { return PQftype(res, col); }
+    /// The name of the column.
     @property string name() { return PQfname(res, col).fromStringz.idup; }
 
     /// Typed conversion. as!string COPIES; as!(Nullable!T) accepts NULL.
@@ -270,6 +294,7 @@ struct Field
         }
     }
 
+    /// The text the server sent, or "NULL".
     string toString() { return isNull ? "NULL" : raw.idup; }
 }
 
@@ -335,15 +360,20 @@ struct Numeric
     private BigInt digits;   // the value without its decimal point, sign included
     private int scale;       // how many of those digits are after the point
 
+    /// Parses the text form: `1234.50`, `-1e3`, `NaN`, `Infinity`, `-Infinity`.
     this(const(char)[] text) { this = parse(text); }
 
+    /// NaN, which in Postgres equals itself and sorts above everything.
     @property bool isNaN() const { return kind == Kind.nan; }
+    /// Infinity or -Infinity.
     @property bool isInfinity() const { return kind == Kind.posInf || kind == Kind.negInf; }
+    /// Neither NaN nor an infinity.
     @property bool isFinite() const { return kind == Kind.finite; }
 
     /// Digits after the decimal point, as the server wrote them: 1.10 keeps two.
     @property int decimals() const { return scale; }
 
+    /// The same as the constructor: throws PgException on malformed text.
     static Numeric parse(const(char)[] source)
     {
         Numeric n;
@@ -398,6 +428,7 @@ struct Numeric
         return n;
     }
 
+    /// Plain decimal notation, with the digits after the point the value was read with.
     string toString() const
     {
         final switch (kind)
@@ -433,6 +464,7 @@ struct Numeric
         return a < b ? -1 : (a > b ? 1 : 0);
     }
 
+    /// By value, as SQL has it: 1.10 == 1.1, and NaN == NaN.
     bool opEquals(const Numeric other) const
     {
         if (kind == Kind.nan || other.kind == Kind.nan) return kind == other.kind;
@@ -881,8 +913,10 @@ struct Row
         this.row = row;
     }
 
+    /// How many columns the row has.
     @property int length() { return PQnfields(res); }
 
+    /// A column by position, from 0.
     Field opIndex(int col)
     {
         pgEnforce(col >= 0 && col < PQnfields(res),
@@ -891,6 +925,7 @@ struct Row
         return Field(owner, row, col);
     }
 
+    /// A column by name.
     Field opIndex(string columnName)
     {
         auto col = columnIndex(res, columnName);
@@ -898,6 +933,7 @@ struct Row
         return Field(owner, row, col);
     }
 
+    /// Every column, as a range of `Field`.
     @property auto fields() { return iota(length).map!(i => Field(owner, row, i)); }
 
     /// Compile-time mapping onto a struct: every member looks up the column of the same name.
@@ -915,6 +951,7 @@ struct Row
         return value;
     }
 
+    /// `[name: value, ...]`, for debugging.
     string toString()
     {
         auto app = appender!string();
@@ -987,15 +1024,25 @@ struct Rows
     private ResultRef state;
     private size_t first, last;
 
+    /// Range primitives.
     @property bool empty() { return first >= last; }
+    /// ditto
     @property Row front() { return Row(state, cast(int) first); }
+    /// ditto
     void popFront() { ++first; }
+    /// ditto
     @property Row back() { return Row(state, cast(int)(last - 1)); }
+    /// ditto
     void popBack() { --last; }
+    /// ditto
     @property Rows save() { return this; }
+    /// ditto
     @property size_t length() { return last - first; }
+    /// ditto
     Row opIndex(size_t i) { return Row(state, cast(int)(first + i)); }
+    /// ditto
     Rows opSlice(size_t a, size_t b) { return Rows(state, first + a, first + b); }
+    /// ditto
     alias opDollar = length;
 }
 
@@ -1036,6 +1083,7 @@ struct Result
     /// The full diagnostic string: "UPDATE 3", "INSERT 0 1", "CREATE TABLE".
     @property string cmdStatus() { return PQcmdStatus(state.res).fromStringz.idup; }
 
+    /// Whether the statement returns rows (a select, or anything with `returning`).
     @property bool hasRows() { return PQresultStatus(state.res) == PGRES_TUPLES_OK; }
 
     /// Touching zero rows is NOT an error for Postgres; this makes it one.
@@ -1445,6 +1493,7 @@ struct Query
         return Result(res);
     }
 
+    /// Runs the statement and returns the first column of the first row.
     T scalar(T = string)() { return exec().scalar!T; }
 
     /**
@@ -1556,12 +1605,15 @@ struct RowStream(T)
         advance();
     }
 
+    /// Range primitives.
     @property bool empty()
     {
         return !state.refCountedStore.isInitialized || state.refCountedPayload.done;
     }
 
+    /// ditto
     @property T front() { return state.refCountedPayload.value; }
+    /// ditto
     void popFront() { advance(); }
 
     private static void take(StreamState!T* s)
@@ -1844,12 +1896,15 @@ struct CopyOut
         advance();
     }
 
+    /// Range primitives.
     @property bool empty()
     {
         return !state.refCountedStore.isInitialized || state.refCountedPayload.done;
     }
 
+    /// ditto
     @property const(char)[] front() { return state.refCountedPayload.line; }
+    /// ditto
     void popFront() { advance(); }
 
     private void advance()
@@ -1931,6 +1986,10 @@ struct Transaction
             cast(void) collectException(conn.execScript("rollback"));
     }
 
+    /**
+     * Makes the work permanent. Throws with SQLSTATE 25P02 when an earlier
+     * statement had already failed, since the server rolls back instead.
+     */
     void commit()
     {
         immutable tag = conn.execStatus("commit");
@@ -1943,6 +2002,7 @@ struct Transaction
                                   ~ "so the server rolled it back instead", "25P02");
     }
 
+    /// Throws the work away now, rather than at the end of the scope.
     void rollback() { conn.execScript("rollback"); settled = true; }
 
     /// A restore point: lets you recover from an error without losing everything.
@@ -1953,6 +2013,7 @@ struct Transaction
     }
 }
 
+/// RAII, like Transaction: if you never call release(), the destructor rolls back to it.
 struct Savepoint
 {
     private Connection* conn;
@@ -1974,7 +2035,9 @@ struct Savepoint
             cast(void) collectException(conn.execScript("rollback to savepoint " ~ name));
     }
 
+    /// Keeps what was done since the savepoint, as part of the transaction.
     void release()  { conn.execScript("release savepoint " ~ name);     settled = true; }
+    /// Undoes what was done since the savepoint; the transaction goes on.
     void rollback() { conn.execScript("rollback to savepoint " ~ name); settled = true; }
 }
 
@@ -1996,6 +2059,7 @@ struct PreparedStatement
     /// ditto
     Query bind(T)(string placeholder, T value) { auto q = fresh(); q.bind(placeholder, value); return q; }
 
+    /// Runs it with every value on the spot, bound to $1, $2… in order.
     Result exec(Args...)(Args args)
     {
         auto q = fresh();
@@ -2003,6 +2067,7 @@ struct PreparedStatement
         return q.exec();
     }
 
+    /// ditto
     T scalar(T = string, Args...)(Args args)
     {
         auto q = fresh();
@@ -2010,6 +2075,7 @@ struct PreparedStatement
         return q.scalar!T;
     }
 
+    /// ditto
     auto stream(T = Row, Args...)(Args args)
     {
         auto q = fresh();
@@ -2063,6 +2129,10 @@ struct Connection
 
     @disable this(this);
 
+    /**
+     * Connects, or throws. `conninfo` is libpq's: `"host=… dbname=… user=…"`
+     * or a `postgresql://` URI.
+     */
     this(string conninfo)
     {
         handle = PQconnectdb(conninfo.toStringz);
@@ -2097,6 +2167,7 @@ struct Connection
         PQsetNoticeProcessor(handle, &noticeTrampoline, cast(void*) notices);
     }
 
+    /// Whether the connection is up. False after the server went away: see `reset`.
     @property bool ok() { return handle !is null && PQstatus(handle) == CONNECTION_OK; }
 
     /// Refuses up front while a stream or a COPY still holds the connection.
@@ -2105,9 +2176,16 @@ struct Connection
         pgEnforce(!busy, "the connection is busy with a stream or a COPY in progress: "
                          ~ "consume it, or let it go out of scope, first");
     }
+
+    /// The server version as a number: 160004 for 16.4.
     @property int serverVersion() { return PQserverVersion(handle); }
+    /// Inside a transaction that already failed: only a rollback is accepted now.
     @property bool inErrorState() { return PQtransactionStatus(handle) == PQTRANS_INERROR; }
 
+    /**
+     * Reconnects with the same parameters. Prepared statements do not survive
+     * it, since they lived in the old session: prepare them again afterwards.
+     */
     void reset()
     {
         PQreset(handle);
@@ -2133,11 +2211,17 @@ struct Connection
         return q.exec();
     }
 
+    /// One value: the first column of the first row, converted to `T`.
     T scalar(T = string, Args...)(string sql, Args args)
     {
         return exec(sql, args).scalar!T;
     }
 
+    /**
+     * One row at a time, in constant memory: a lazy range of `T`, a struct
+     * mapped by column name or `Row` itself. The connection is busy until the
+     * range is consumed or dropped.
+     */
     auto stream(T = Row, Args...)(string sql, Args args)
     {
         auto q = Query(&this, sql);
@@ -2250,6 +2334,7 @@ struct Connection
         return CopyOut(&this);
     }
 
+    /// Begins a transaction, rolled back at the end of the scope unless committed.
     Transaction transaction(Isolation isolation = Isolation.serverDefault,
                             Access access = Access.readWrite)
     {

@@ -114,8 +114,8 @@ void listNotes(Request request, Output output)
     auto window = ["1 day", "7 days", "30 days"].canFind(since)
                 ? Nullable!string(since) : Nullable!string.init;
 
-    // The Result has to outlive the loop: `rows` is a view into the PGresult
-    // it owns, so iterating a temporary would read memory already freed.
+    // `found` could just as well be a temporary: the rows share a reference
+    // count on the PGresult, so it stays alive as long as any of them does.
     auto found = db.sql(LIST_SQL).bind("q", q).bind("since", window).exec();
 
     JSONValue[] notes;
