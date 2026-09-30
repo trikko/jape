@@ -36,6 +36,10 @@ import std.traits;
 import std.typecons;
 import std.uni : sicmp;
 
+// On some platforms (macOS) the C headers declare their own size_t, which pq
+// re-exports and which then clashes with D's: the local alias settles it.
+alias size_t = object.size_t;
+
 // ImportC turns simple object-like macros into manifest constants; should that
 // ever stop being true, these fallbacks keep the module compiling.
 static if (!__traits(compiles, PG_DIAG_SQLSTATE))
