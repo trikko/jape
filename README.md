@@ -1,8 +1,15 @@
 # jape
 
+[![CI](https://github.com/trikko/jape/actions/workflows/ci.yml/badge.svg)](https://github.com/trikko/jape/actions/workflows/ci.yml)
+[![DUB](https://img.shields.io/dub/v/jape)](https://code.dlang.org/packages/jape)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **J**ust **A**nother **P**ostgres **E**lephant — a thin, idiomatic D wrapper over
 **libpq**, imported with **ImportC**. There are no hand-written bindings: the
 library includes `libpq-fe.h` directly.
+
+**Documentation:** [API reference](https://trikko.github.io/jape/) ·
+[for AI agents](#using-jape-with-an-ai-agent) · `dub add jape`
 
 ## Running a statement
 
@@ -286,6 +293,46 @@ throws is swallowed — a notice can never fail the query that caused it.
 | `CopyIn` / `CopyOut` | bulk load and unload, RAII: no `commit` means nothing is written |
 | `PgException` | SQLSTATE, constraint, detail, hint, position… everything the server sent |
 
+## Using jape with an AI agent
+
+jape is new, so it is not in the training data of the models: a model left to
+guess writes code for another Postgres library, or invents one. Give it the
+reference instead:
+
+* [SKILL.md](https://trikko.github.io/jape/SKILL.md): the rules that are easiest
+  to get wrong, as a skill. [AGENTS.md](https://trikko.github.io/jape/AGENTS.md)
+  is the same text without the front matter, for tools that want a rules file
+  (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, ...).
+* [llms-full.txt](https://trikko.github.io/jape/llms-full.txt): the whole API;
+  [llms.txt](https://trikko.github.io/jape/llms.txt): a short overview.
+
+The easiest way: ask your agent to do it.
+
+> Install the skill at https://trikko.github.io/jape/SKILL.md. It is the
+> reference for jape, the D PostgreSQL client I am using.
+
+Or by hand: a skill is a folder with `SKILL.md` in it (`llms-full.txt` next to
+it saves a download).
+
+| Tool | For all projects | For one project |
+|---|---|---|
+| Claude Code | `~/.claude/skills/jape/` | `.claude/skills/jape/` |
+| Antigravity (IDE, 2.0) | `~/.gemini/config/skills/jape/` | `.agents/skills/jape/` |
+| Antigravity CLI | `~/.gemini/antigravity-cli/skills/jape/` | `.agents/skills/jape/` |
+| Gemini CLI | `~/.gemini/skills/jape/` | `.gemini/skills/jape/` |
+| Codex | `~/.agents/skills/jape/` | `.agents/skills/jape/` |
+
+For example, for Claude Code:
+
+```sh
+mkdir -p ~/.claude/skills/jape && cd ~/.claude/skills/jape
+curl -fsSLO https://trikko.github.io/jape/SKILL.md
+curl -fsSLO https://trikko.github.io/jape/llms-full.txt
+```
+
+The skill is loaded when the task is about jape or Postgres in D; in Claude Code
+you can also call it with `/jape`.
+
 ## Requirements
 
 libpq and its development headers, installed system-wide:
@@ -317,6 +364,11 @@ dub build     # the library
 dub test      # unit tests; those needing a server are skipped
 JAPE_TEST_CONNINFO="host=127.0.0.1 port=55432 user=postgres password=secret" dub test
 ```
+
+The html reference in `docs/`, served by GitHub Pages, is generated from the
+comments in the source with `tools/docs.sh` (ddox with the scod skin).
+`docs/AGENTS.md`, `docs/llms.txt` and `docs/llms-full.txt` are written by hand;
+`docs/SKILL.md` is generated from `AGENTS.md`.
 
 ## A database to try it against
 
@@ -388,16 +440,17 @@ docker exec -it pqtest psql -U postgres -c 'drop table if exists notes, users'
 
 ## How ImportC is used here
 
-`source/pq.c` is a single line:
+`source/jape_pq.c` is a single line:
 
 ```c
 #include <libpq-fe.h>
 ```
 
 `dub.json` hands it to dmd alongside the D sources through `sourceFiles`. Dmd
-preprocesses and compiles that file as a D module named `pq`,
-so `import pq;` gives access to every libpq function, struct and enum —
-including unqualified enum members (`CONNECTION_OK`, `PGRES_TUPLES_OK`) and
+preprocesses and compiles that file as a D module named after it, `jape_pq` —
+prefixed, because module names are global and a bare `pq` could clash with
+another package. `import jape_pq;` gives access to every libpq function, struct
+and enum — including unqualified enum members (`CONNECTION_OK`, `PGRES_TUPLES_OK`) and
 simple object-like macros turned into manifest constants (`PG_DIAG_SQLSTATE`).
 
 ## Design notes

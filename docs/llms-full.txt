@@ -1,0 +1,338 @@
+# jape: PostgreSQL client for D — full reference
+
+jape (Just Another Postgres Elephant) is a thin, idiomatic PostgreSQL client for the D programming language. It wraps libpq, imported directly with ImportC (`source/jape_pq.c` is `#include <libpq-fe.h>`, no hand-written bindings), and turns it into D types with RAII and ranges. Version 0.2.1, MIT license, one module: `import jape;`.
+
+- Rules for agents: https://trikko.github.io/jape/AGENTS.md
+- API documentation: https://trikko.github.io/jape/
+- Source: https://github.com/trikko/jape
+
+## Installation
+
+`dub add jape`. Requirements:
+
+- libpq and its headers: `apt install libpq-dev` (Debian/Ubuntu), `pacman -S postgresql-libs` (Arch), `dnf install libpq-devel` (Fedora), `brew install libpq` (macOS). The standard include paths of these are already in jape's `dub.json`; elsewhere pass `DFLAGS="-P=-I$(pg_config --includedir) -L-L$(pg_config --libdir)"`.
+- dmd or ldc2. gdc is not supported.
+
+`import jape_pq;` gives the raw libpq API (every function, struct and enum of `libpq-fe.h`) when something is not wrapped.
+
+## Connection
+
+```d
+auto db = Connection("host=localhost port=5432 dbname=app user=app password=...");
+auto db2 = Connection("postgresql://app@localhost/app");
+```
+
+- Constructor: connects or throws `PgException`. The argument is a libpq conninfo string or URI.
+- Non-copyable (`@disable this(this)`), closed by its destructor (`PQfinish`). Pass it by `ref`. `Query`, `Transaction`, `CopyIn` and streams keep a pointer to it: do not move it while they are alive.
+- `bool ok` — the connection is up. False for a default-initialised `Connection` and after the server went away.
+- `void reset()` — reconnects with the same parameters (`PQreset`). Forgets the prepared statements: prepare them again.
+- `int serverVersion` — e.g. 160004 for 16.4.
+- `bool inErrorState` — inside a failed transaction; only a rollback is accepted.
+- `void onNotice(void delegate(string) handler)` — where NOTICE/WARNING messages go. Default: stderr (libpq's). `null` drops them. Exceptions thrown by the handler are swallowed.
+- `string escapeIdentifier(string s)` — a quoted identifier (`"users"`), for dynamic table or column names.
+- `void execScript(string sql)` — several `;`-separated statements, NO parameters (`PQexec`). For DDL and migrations only.
+
+## Running a statement: exec, scalar, stream
+
+Every verb takes the SQL and then the values, bound in order to `$1`, `$2`, ... The values never go into the SQL text: they travel separately (`PQexecParams`), so they cannot be injected.
+
+```d
+// the whole result, in memory
+Result r = db.exec("select id, name from users where age > $1", 18);
+
+// one value: first column of the first row; throws if there are no rows
+long n = db.scalar!long("select count(*) from users");
+string s = db.scalar("select name from users where id = $1", 7);   // T defaults to string
+
+// one row at a time, constant memory; T is a struct mapped by column name, or Row
+foreach (u; db.stream!User("select id, name, age from users"))
+    process(u);
+foreach (row; db.stream("select id, name from users"))
+    writeln(row["name"].as!string);
+```
+
+Signatures on `Connection`:
+
+```d
+Result exec(Args...)(string sql, Args args);
+T      scalar(T = string, Args...)(string sql, Args args);
+auto   stream(T = Row, Args...)(string sql, Args args);   // RowStream!T
+```
+
+## Query: binding values yourself
+
+`db.sql(text)` returns a `Query` without running anything. Bind, then call a verb.
+
+```d
+auto q = db.sql("select id, name from users
+                 where age > :age and (:city::text is null or city = :city)");
+q.bind("age", 18);
+q.bind("city", filterByCity ? Nullable!string(city) : Nullable!string.init);
+auto rows = q.exec();
+
+long total = db.sql("select count(*) from users where age > :age").bind("age", 18).scalar!long;
+foreach (u; db.sql("select id, name, age from users").stream!User) { }
+```
+
+- Placeholders: `:name` or `$n`. The same `:name` may appear several times: it is one parameter. `::type` casts, `a[1:2]` slices and text inside quotes, comments and dollar-quoted strings are not placeholders.
+- `ref Query bind(T)(int position, T value)` — positional, from 1.
+- `ref Query bind(T)(string placeholder, T value)` — `"age"`, `":age"` or `"$1"`.
+- `null` or an empty `Nullable!T` binds SQL NULL.
+- `ref Query reset()` — clears the bindings, to reuse the Query.
+- A parameter never bound throws `PgException` at `exec`/`stream` ("parameter $2 (:city) was never bound"). It is not sent as NULL.
+- A string containing a NUL byte is refused: send binary data as `ubyte[]`.
+- `Result exec()`, `T scalar(T = string)()`, `auto stream(T = Row)(int chunkSize = 1)`.
+
+`db.exec(text, a, b)` is exactly `db.sql(text).bind(1, a).bind(2, b).exec()`.
+
+Placeholder limits (Postgres rules, not jape's):
+
+- `$n` is a value, never an identifier: `select * from $1` fails. Use `escapeIdentifier`.
+- `in ($1)` binds ONE value. For a list write `= any($1)` and bind a D array; an empty array is the empty list.
+- When the server cannot infer a type, cast: `(:x::text is null or col = :x)`.
+
+```d
+db.sql("select * from users where id = any(:ids)").bind("ids", [2, 5, 9]).exec();
+auto table = db.escapeIdentifier(name);
+db.exec("select count(*) from " ~ table);   // identifier escaped; values still bound
+```
+
+## Prepared statements
+
+```d
+auto byAge = db.prepare("by_age", "select id, name from users where age >= :age");
+foreach (age; [18, 30, 65])
+    writeln(byAge.bind("age", age).scalar!long);
+
+db.prepared("by_age").bind("age", 30).stream!User;   // retrieved by name, anywhere
+db.prepared("by_age").exec(30);                       // values in order
+db.isPrepared("by_age");                              // true
+db.preparedNames;                                     // ["by_age"]
+db.deallocateAll();                                   // forget all, server and client
+```
+
+- `PreparedStatement prepare(string name, string sql)` — one round-trip now; the server parses and plans once. Preparing the same name with the same text again is a no-op; with different text it throws.
+- `PreparedStatement prepared(string name)` — throws if this connection never prepared it.
+- `PreparedStatement`: `bind(position | name, value)` returns a fresh `Query`; `exec(args...)`, `scalar!T(args...)`, `stream!T(args...)`.
+- Prepared statements live in the session: gone after `reset()` or a new `Connection`. Do not run `deallocate` by hand: use `deallocateAll()`.
+- Use `prepare` for statements run many times on one connection, `sql` for the rest.
+
+## Results
+
+```d
+auto r = db.exec("select id, name, email from users order by id");
+r.length;                         // rows
+r[0]["name"].as!string;           // row by index, column by name
+r[0][1].as!string;                // column by position, from 0
+foreach (row; r) { }              // Result is a range through `alias rows this`
+auto names = db.exec("select name from users").map!(r => r["name"].as!string).array;
+```
+
+- `Result` owns the `PGresult` through a reference count shared with every `Rows`, `Row` and `Field` taken from it: views over temporaries are safe, and the memory is freed with the last reference.
+- `Rows rows` — a `RandomAccessRange` of `Row` (length, indexing, slicing, `save`, `back`).
+- `long affected` — rows touched by insert/update/delete (0 is not an error).
+- `ref Result expect(long n)` — throws unless exactly `n` rows were touched: `db.exec("update ... where id = $1", id).expect(1);`
+- `string cmdStatus` — "UPDATE 3", "INSERT 0 1".
+- `bool hasRows` — the statement returns rows.
+- `T scalar(T = string)()`.
+- To get generated values back use `returning`: `db.scalar!int("insert into t(x) values($1) returning id", x)`.
+
+`Row`:
+
+- `Field opIndex(int col)`, `Field opIndex(string name)` — throws on an unknown column.
+- `int length`, `auto fields` (range of `Field`), `string toString()`.
+- `T as(T)()` for a struct `T`: each member is read from the column with the same name, converted to the member's type. A missing column throws. `@Column("db_name")` on a member renames it.
+
+```d
+struct User
+{
+    int id;
+    @Column("full_name") string name;
+    Nullable!string email;
+    SysTime created_at;
+}
+User u = db.exec("select id, full_name, email, created_at from users where id = $1", 1)[0].as!User;
+```
+
+`Field`:
+
+- `T as(T)()` — converted value. NULL throws, unless `T` is `Nullable!U`.
+- `bool isNull`, `string name`, `uint typeOid`, `const(char)[] raw` (the text, a view into the result).
+
+## Streaming
+
+`stream` sends the query and reads the answer one row at a time (`PQsetSingleRowMode`), so memory stays bounded whatever the size of the result.
+
+- Returns `RowStream!T`, an input range. Copies share one cursor.
+- While the stream is not finished the connection is busy: any other statement on it throws "the connection is busy with a stream or a COPY in progress". Consume it, or let it go out of scope: the destructor drains the rest, so `break` is safe.
+- An error in the middle (row 500,000) arrives after the rows before it, as a `PgException` from `popFront`.
+- `T = Row` gives rows that stay valid after `popFront`, but keeping all of them keeps all the memory.
+- `Query.stream!T(chunkSize)` with libpq 17 or newer uses `PQsetChunkedRowsMode`: fewer allocations, same one-row-at-a-time range. With older libpq the argument is ignored. `enum hasChunkedRows` says which one was compiled.
+
+```d
+foreach (u; db.sql("select id, name, age from users").stream!User(256))
+    process(u);
+```
+
+## Types
+
+Reading (`as!T`, struct members, `scalar!T`) and binding use the text format.
+
+| Postgres | D | notes |
+|---|---|---|
+| `smallint`, `integer`, `bigint` | `short`, `int`, `long` | |
+| `real`, `double precision` | `float`, `double` | |
+| `boolean` | `bool` | |
+| `text`, `varchar`, `char` | `string` | |
+| `numeric` | `Numeric`, or `double` | `double` is approximate |
+| `bytea` | `ubyte[]` | both directions |
+| `json`, `jsonb` | `std.json.JSONValue` | parsed |
+| `interval` | `core.time.Duration` | an interval with months or years throws: months have no fixed length |
+| `time` | `TimeOfDay`, or `Duration` since midnight | a fractional second throws for `TimeOfDay` |
+| `date` | `std.datetime.Date` | |
+| `timestamp`, `timestamptz` | `SysTime` | bound as UTC |
+| `T[]` | D arrays | `Nullable!T[]` when elements can be NULL; nested arrays unsupported |
+| `uuid`, others | `string`, or anything `std.conv.to` parses (`UUID`) | |
+| NULL | `Nullable!T` | |
+
+## Numeric
+
+An exact decimal. `double` cannot hold `0.1`; `Numeric` can.
+
+```d
+Numeric amount = db.scalar!Numeric("select amount from invoices where id = $1", id);
+amount.toString;                 // "1234567.89", exactly as stored
+amount.toDouble;                 // approximate, when that is what you want
+Numeric("1.10") == Numeric("1.1");   // true: comparison by value
+db.exec("update invoices set amount = $1 where id = $2", Numeric("10.25"), id);
+```
+
+- `this(const(char)[] text)`, `static Numeric parse(text)`: plain or exponent notation, `NaN`, `Infinity`, `-Infinity`. Malformed text throws `PgException`.
+- `opEquals`, `opCmp`, `toHash`, `toString`, `toDouble`, `decimals`, `isNaN`, `isInfinity`, `isFinite`.
+- NaN follows Postgres, not IEEE: it equals itself and sorts above everything.
+- No arithmetic on purpose: `sum`, `*`, `/` and rounding belong in SQL.
+- `avg()`, `stddev()`, `extract(epoch ...)` and decimal literals give `numeric` too.
+
+## Transactions
+
+```d
+{
+    auto tx = db.transaction();                       // BEGIN
+    db.exec("update accounts set balance = balance - $1 where id = $2", amount, from);
+    db.exec("update accounts set balance = balance + $1 where id = $2", amount, to);
+    tx.commit();
+}   // no commit() → ROLLBACK, also when an exception leaves the scope
+
+auto tx = db.transaction(Isolation.serializable, Access.readOnly);
+```
+
+- `Transaction transaction(Isolation = Isolation.serverDefault, Access = Access.readWrite)`.
+- `enum Isolation { serverDefault, readCommitted, repeatableRead, serializable }`, `enum Access { readWrite, readOnly }`.
+- `commit()` — throws `PgException` with SQLSTATE 25P02 if an earlier statement in the transaction failed (the server rolls back instead).
+- `rollback()`.
+- `Savepoint savepoint()` — RAII too: `release()` keeps the work, `rollback()` or the destructor undoes it and the transaction goes on.
+
+```d
+auto tx = db.transaction();
+{
+    auto sp = tx.savepoint();
+    try { db.exec("insert into t values($1)", x); sp.release(); }
+    catch (PgException e) { /* sp rolls back, tx is still usable */ }
+}
+tx.commit();
+```
+
+### transact: retrying
+
+Under `serializable` the server may abort a transaction it cannot serialise (40001), and a deadlock (40P01) ends the same way: *nothing happened, try again*. `transact` runs a delegate in a transaction, commits when it returns, rolls back when it throws, and runs it again (up to `attempts`, with a short random backoff) on those two errors. Other errors are rethrown.
+
+```d
+long seen = db.transact({
+    auto n = db.scalar!long("select count(*) from dots where colour = 'white'");
+    db.exec("insert into dots(colour) values('black')");
+    return n;
+});
+
+db.transact({ ... }, Isolation.repeatableRead, Access.readWrite, 10);
+```
+
+Signature: `auto transact(Work)(scope Work work, Isolation = Isolation.serializable, Access = Access.readWrite, int attempts = 5)`. The body can run more than once: keep side effects that are not database writes outside it. `bool isRetryable(string sqlstate)` is the test it uses.
+
+## COPY
+
+```d
+{
+    auto copy = db.copyIn("copy notes(title, body) from stdin");
+    foreach (n; notes)
+        copy.writeRow(n.title, n.body);   // tabs, newlines, backslashes and NULL escaped
+    long loaded = copy.commit();
+}   // without commit() the destructor aborts: nothing is written
+
+foreach (line; db.copyOut("copy notes to stdout with (format csv)"))
+    process(line.idup);   // const(char)[] into libpq's buffer: copy it to keep it
+```
+
+- `CopyIn copyIn(string statement)` — a `COPY ... FROM STDIN`. `writeRow(values...)` formats one text-format row (`null` / empty `Nullable` → NULL); `write(const(char)[] data)` sends raw bytes (your own CSV); `long commit()`; `abort(string why)`.
+- `CopyOut copyOut(string statement)` — a `COPY ... TO STDOUT`, an input range of lines; the destructor drains it.
+- A `COPY` from or to a server-side file is an ordinary statement: use `exec`. `copyIn`/`copyOut` say so if given one.
+- COPY is the fastest way to load rows: 100k rows in ~84 ms, against ~489 ms for batched multi-row INSERTs and ~3 s for one INSERT per row in a transaction.
+
+## Errors
+
+```d
+try db.exec("insert into users(email) values($1)", email);
+catch (PgException e)
+{
+    if (e.sqlstate == "23505" && e.constraint == "users_email_key")
+        return "that email is already registered";
+    log(e.full);
+}
+```
+
+`PgException : Exception` fields, empty when the server did not send them: `sqlstate`, `severity`, `detail`, `hint`, `context`, `schema`, `table`, `column`, `constraint`, `dataType`, `int position` (1-based character in the statement), and `string full()` (all of them on one line). Errors raised by jape itself (unbound parameter, unknown column, NULL into a non-Nullable) are `PgException` too, with an empty `sqlstate`.
+
+Common SQLSTATEs: 23505 unique violation, 23503 foreign key, 23502 not null, 23514 check, 40001 serialization failure, 40P01 deadlock, 42P01 undefined table, 42703 undefined column, 42601 syntax error, 25P02 in failed transaction.
+
+## With serverino
+
+serverino workers are processes serving one request at a time: no pool, one connection per worker, kept across requests. It must be opened after the fork, lazily; a `PGconn` inherited from the daemon shares its socket with every worker.
+
+```d
+import jape;
+import serverino;
+
+mixin ServerinoMain;
+
+@onDaemonStart
+void createSchema()
+{
+    auto db = Connection(conninfo);      // local: closed before the workers are forked
+    db.onNotice(null);
+    db.execScript("create table if not exists notes (id serial primary key, title text not null)");
+}
+
+ref Connection db()
+{
+    static Connection c;                 // function-level static: one per worker
+    if (!c.ok)                           // first use, or the database restarted
+    {
+        c = Connection(conninfo);
+        c.prepare("add", "insert into notes(title) values(:title) returning id");
+    }
+    return c;
+}
+
+@endpoint @route!"/add"
+void add(Request request, Output output)
+{
+    auto id = db.prepared("add").bind("title", request.post.read("title")).scalar!int;
+    output ~= id.to!string;
+}
+```
+
+## Limits
+
+- Text format only (no binary protocol).
+- No async API, no LISTEN/NOTIFY, no pipeline mode, no connection pool, no ORM.
+- No nested arrays.
+- A binary built against libpq 17+ needs libpq 17+ at runtime (chunked rows are chosen at compile time).

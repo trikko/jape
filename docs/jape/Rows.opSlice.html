@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+		<title>Function Rows.opSlice</title>
+		<link rel="stylesheet" href="../css/style.min.css"/>
+		<script type="text/javascript" src="../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header></header>
+		<nav id="main-nav">
+			<div>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<form action="#" method="GET">
+						<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus/>
+					</form>
+					<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+document.getElementById('symbolSearchPane').style.display = 'block';</script>
+				</div>
+				<ul class="tree-view">
+					<li>
+						<a class="module selected" href="../jape.html">jape</a>
+				<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Access.html">Access</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Column.html">Column</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Connection.html">Connection</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyIn.html">CopyIn</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyOut.html">CopyOut</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/defaultChunkSize.html">defaultChunkSize</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Field.html">Field</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/hasChunkedRows.html">hasChunkedRows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Isolation.html">Isolation</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Function))" href="../jape/isRetryable.html">isRetryable</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Numeric.html">Numeric</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Class))" href="../jape/PgException.html">PgException</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/PreparedStatement.html">PreparedStatement</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Query.html">Query</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Result.html">Result</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Row.html">Row</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Rows.html">Rows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/RowStream.html">RowStream</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Savepoint.html">Savepoint</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Transaction.html">Transaction</a>
+				</li>
+				</ul>
+					</li>
+				</ul>
+			</div>
+			<p id="main-nav-footer">
+				Built with<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<div>
+				<h1>Function Rows.opSlice</h1><p>Range primitives.
+</p>
+				<div class="prototype">
+					<code class="lang-d">
+						<div class="single-prototype">
+				<a href="../jape/Rows.html"><span class="typ">Rows</span></a> <span class="pln">opSlice</span><span class="pun">(</span>
+				<br/>&nbsp;&nbsp;<span class="typ">ulong</span> <span class="pln">a</span><span class="pun">,</span>
+				<br/>&nbsp;&nbsp;<span class="typ">ulong</span> <span class="pln">b</span>
+				<br/>
+				<span class="pun">)</span><span class="pun">;</span>
+						</div>
+					</code>
+				</div>
+				
+			</div>
+			<footer>
+				<div id="license-info">
+					
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+		<title>Struct Numeric</title>
+		<link rel="stylesheet" href="../css/style.min.css"/>
+		<script type="text/javascript" src="../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header></header>
+		<nav id="main-nav">
+			<div>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<form action="#" method="GET">
+						<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus/>
+					</form>
+					<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+document.getElementById('symbolSearchPane').style.display = 'block';</script>
+				</div>
+				<ul class="tree-view">
+					<li>
+						<a class="module selected" href="../jape.html">jape</a>
+				<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Access.html">Access</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Column.html">Column</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Connection.html">Connection</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyIn.html">CopyIn</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyOut.html">CopyOut</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/defaultChunkSize.html">defaultChunkSize</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Field.html">Field</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/hasChunkedRows.html">hasChunkedRows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Isolation.html">Isolation</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Function))" href="../jape/isRetryable.html">isRetryable</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Numeric.html">Numeric</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Class))" href="../jape/PgException.html">PgException</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/PreparedStatement.html">PreparedStatement</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Query.html">Query</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Result.html">Result</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Row.html">Row</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Rows.html">Rows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/RowStream.html">RowStream</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Savepoint.html">Savepoint</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Transaction.html">Transaction</a>
+				</li>
+				</ul>
+					</li>
+				</ul>
+			</div>
+			<p id="main-nav-footer">
+				Built with<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<div>
+				<h1>Struct Numeric</h1><p>An exact decimal, the way Postgres <code class="lang-d"><span class="pln">numeric</span></code> is exact.
+</p>
+				<div class="prototype">
+					<code class="lang-d">
+						<div class="single-prototype">
+				<span class="kwd">struct</span> <span class="typ">Numeric</span><span class="pun">;</span>
+						</div>
+					</code>
+				</div>
+				<section><p>It exists because <code class="lang-d"><span class="typ">double</span></code> cannot hold a decimal fraction: 0.1 read into a
+ double and written back comes out as 0.10000000000000001, and a thousand
+ additions of 0.01 land on 9.99999999999983 instead of 10. On a column of
+ money that is a bug you do not see until you do.
+</p>
+
+<p> This carries the value, compares it and hands it back untouched. It has no
+ arithmetic on purpose: the database it came from already has exact operators
+ and knows how to round, so <code class="lang-d"><span class="pln">sum</span></code>, <code class="lang-d"><span class="pun">*</span></code> and <code class="lang-d"><span class="pun">/</span></code> belong in the statement, not
+ here.
+</p>
+
+<p> Reading the same column as <code class="lang-d"><span class="typ">double</span></code> still works — the type you ask for is the
+ choice you are making, and an approximation is often the right one. This is
+ for when it is not.
+</p>
+</section>
+
+				<section><h2>Constructors</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.this.html" class="public">
+									<code>this</code>
+								</a>
+								<span class="tableEntryAnnotation">(text)</span>
+							</td>
+							<td>Parses the text form: <code class="lang-d"><span class="lit">1234.50</span></code>, <code class="lang-d"><span class="pun">-</span><span class="lit">1e3</span></code>, <code class="lang-d"><span class="typ">NaN</span></code>, <code class="lang-d"><span class="typ">Infinity</span></code>, <code class="lang-d"><span class="pun">-</span><span class="typ">Infinity</span></code>.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section><h2>Properties</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Type</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.decimals.html" class="public property"><code>decimals</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">int</span></code></td><td>Digits after the decimal point, as the server wrote them: 1.10 keeps two.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.isFinite.html" class="public property"><code>isFinite</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Neither NaN nor an infinity.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.isInfinity.html" class="public property"><code>isInfinity</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Infinity or -Infinity.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.isNaN.html" class="public property"><code>isNaN</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>NaN, which in Postgres equals itself and sorts above everything.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section><h2>Methods</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.opCmp.html" class="public">
+									<code>opCmp</code>
+								</a>
+								<span class="tableEntryAnnotation">(other)</span>
+							</td>
+							<td>Numeric comparison: 1.10 and 1.1 are the same value, as they are in SQL.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.opEquals.html" class="public">
+									<code>opEquals</code>
+								</a>
+								<span class="tableEntryAnnotation">(other)</span>
+							</td>
+							<td>By value, as SQL has it: 1.10 == 1.1, and NaN == NaN.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.parse.html" class="public">
+									<code>parse</code>
+								</a>
+								<span class="tableEntryAnnotation">(source)</span>
+							</td>
+							<td>The same as the constructor: throws PgException on malformed text.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.toDouble.html" class="public">
+									<code>toDouble</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>The approximation, when an approximation is what you want. Lossy by nature.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.toHash.html" class="public">
+									<code>toHash</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Consistent with opEquals: trailing zeros are dropped first, so 1.10 and 1.1 hash alike.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Numeric.toString.html" class="public">
+									<code>toString</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Plain decimal notation, with the digits after the point the value was read with.
+</td>
+						</tr>
+					</table>
+				</section>
+			</div>
+			<footer>
+				<div id="license-info">
+					
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

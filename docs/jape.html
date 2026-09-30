@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+		<title>Module jape</title>
+		<link rel="stylesheet" href="./css/style.min.css"/>
+		<script type="text/javascript" src="./js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header></header>
+		<nav id="main-nav">
+			<div>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<form action="#" method="GET">
+						<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus/>
+					</form>
+					<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="./symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "./";
+document.getElementById('symbolSearchPane').style.display = 'block';</script>
+				</div>
+				<ul class="tree-view">
+					<li>
+						<a class="module selected" href="./jape.html">jape</a>
+				<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="./jape/Access.html">Access</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Column.html">Column</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Connection.html">Connection</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/CopyIn.html">CopyIn</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/CopyOut.html">CopyOut</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="./jape/defaultChunkSize.html">defaultChunkSize</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Field.html">Field</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="./jape/hasChunkedRows.html">hasChunkedRows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="./jape/Isolation.html">Isolation</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Function))" href="./jape/isRetryable.html">isRetryable</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Numeric.html">Numeric</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Class))" href="./jape/PgException.html">PgException</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/PreparedStatement.html">PreparedStatement</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Query.html">Query</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Result.html">Result</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Row.html">Row</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Rows.html">Rows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/RowStream.html">RowStream</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Savepoint.html">Savepoint</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="./jape/Transaction.html">Transaction</a>
+				</li>
+				</ul>
+					</li>
+				</ul>
+			</div>
+			<p id="main-nav-footer">
+				Built with<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<div>
+				<h1>Module jape</h1><p>jape — Just Another Postgres Elephant.
+</p><section><p>A thin, idiomatic D wrapper over libpq, imported with ImportC
+ (<code class="lang-d"><span class="kwd">import </span><span class="pln">jape_pq</span><span class="pun">;</span></code> → jape_pq.c → libpq-fe.h). No hand-written bindings.
+</p>
+
+<p> Core idea: separate WHO OWNS from WHO ITERATES.
+   - types that own a session resource (Connection, Transaction, CopyIn) are
+     non-copyable and release it in their destructor;
+   - a result is reference-counted: Result, its Rows and every Row and Field
+     taken from them share it, so ranges stay lightweight, copyable views
+     and std.algorithm and std.range compose without friction.
+</p>
+
+<p> Declared limits: text format only (no binary), no async API,
+ no LISTEN/NOTIFY, no pipeline mode.
+</p>
+</section>
+<section><section><h2>Caveat</h2>
+<p>Query and Transaction hold a Connection* — keep the connection
+ still (pass it by ref) while queries are alive, do not move it.
+</p>
+</section>
+<section><h2>Example</h2>
+<pre class="code"><code class="lang-d"><span class="kwd">struct </span><span class="typ">User </span><span class="pun">{ </span><span class="typ">int </span><span class="pln">id</span><span class="pun">; </span><span class="typ">string </span><span class="pln">name</span><span class="pun">; </span><span class="typ">int </span><span class="pln">age</span><span class="pun">; }
+
+</span><span class="kwd">auto </span><span class="pln">db </span><span class="pun">= <a href="./jape/Connection.html"></span><span class="typ">Connection</span></a><span class="pun">(</span><span class="str">"host=localhost dbname=app user=app"</span><span class="pun">);
+
+</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">exec</span><span class="pun">(</span><span class="str">"insert into users(name, age) values(, )"</span><span class="pun">, </span><span class="str">"Ada"</span><span class="pun">, </span><span class="lit">36</span><span class="pun">);
+</span><span class="kwd">auto </span><span class="pln">adults </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">scalar</span><span class="pun">!</span><span class="typ">long</span><span class="pun">(</span><span class="str">"select count(*) from users where age &gt;= "</span><span class="pun">, </span><span class="lit">18</span><span class="pun">);
+
+</span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">u</span><span class="pun">; </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">stream</span><span class="pun">!</span><span class="typ">User</span><span class="pun">(</span><span class="str">"select id, name, age from users order by id"</span><span class="pun">))
+    </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">u<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">);</span></code></pre>
+</section>
+<section><h2>See Also</h2>
+<p><a href="https://github.com/trikko/jape">the README</a> for a guided tour,
+   <a href="https://trikko.github.io/jape/llms-full.txt">llms-full.txt</a> for
+   the whole API in one file.
+</p>
+</section>
+</section>
+				<section>
+					<h2>Functions</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="isRetryable" class="public" href="./jape/isRetryable.html">isRetryable</a><span class="tableEntryAnnotation">(sqlstate)</span>
+								</code>
+							</td>
+							<td>The two the server raises to mean "nothing happened, try again".
+</td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Classes</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="PgException" class="public" href="./jape/PgException.html">PgException</a>
+								</code>
+							</td>
+							<td>What the server said, taken apart.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Structs</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Column" class="public" href="./jape/Column.html">Column</a>
+								</code>
+							</td>
+							<td>UDA mapping a member onto a differently named column: @Column("user_id") int id;
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Connection" class="public" href="./jape/Connection.html">Connection</a>
+								</code>
+							</td>
+							<td>Owns the PGconn. Non-copyable; the destructor calls PQfinish.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="CopyIn" class="public" href="./jape/CopyIn.html">CopyIn</a>
+								</code>
+							</td>
+							<td>A bulk load in progress.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="CopyOut" class="public" href="./jape/CopyOut.html">CopyOut</a>
+								</code>
+							</td>
+							<td>Rows coming out of a COPY, one line at a time.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Field" class="public" href="./jape/Field.html">Field</a>
+								</code>
+							</td>
+							<td>One cell. A copyable value that keeps its PGresult alive for as long as it exists.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Numeric" class="public" href="./jape/Numeric.html">Numeric</a>
+								</code>
+							</td>
+							<td>An exact decimal, the way Postgres <code class="lang-d"><span class="pln">numeric</span></code> is exact.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="PreparedStatement" class="public" href="./jape/PreparedStatement.html">PreparedStatement</a>
+								</code>
+							</td>
+							<td>The plan is computed once and reused for the rest of the session.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Query" class="public" href="./jape/Query.html">Query</a>
+								</code>
+							</td>
+							<td>A builder: it accumulates bindings at runtime and only hands everything to
+ libpq on exec(). Values ALWAYS travel outside the SQL text, so they can
+ never turn into syntax.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Result" class="public" href="./jape/Result.html">Result</a>
+								</code>
+							</td>
+							<td>Owns the PGresult via a reference count, allowing safe use with lazy ranges.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Row" class="public" href="./jape/Row.html">Row</a>
+								</code>
+							</td>
+							<td>One row. Also a copyable view, and it too keeps its PGresult alive.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Rows" class="public" href="./jape/Rows.html">Rows</a>
+								</code>
+							</td>
+							<td>A copyable view over a result's rows: a full RandomAccessRange.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="RowStream" class="public" href="./jape/RowStream.html">RowStream</a>
+								</code>
+							</td>
+							<td>A lazy InputRange. Copyable (map/filter need that), but every copy shares
+ one cursor — advancing any of them advances all — and the draining happens
+ exactly once, at the last reference: breaking out of a foreach early still
+ leaves the connection clean.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Savepoint" class="public" href="./jape/Savepoint.html">Savepoint</a>
+								</code>
+							</td>
+							<td>RAII, like Transaction: if you never call release(), the destructor rolls back to it.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Transaction" class="public" href="./jape/Transaction.html">Transaction</a>
+								</code>
+							</td>
+							<td></td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Enums</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Access" class="public" href="./jape/Access.html">Access</a>
+								</code>
+							</td>
+							<td>A read-only transaction is refused any write, and says so if one is attempted.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<code>
+									<a id="Isolation" class="public" href="./jape/Isolation.html">Isolation</a>
+								</code>
+							</td>
+							<td>How much the transaction is allowed to see of what others are doing.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section>
+					<h2>Manifest constants</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Type</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a id="defaultChunkSize" class="public" href="./jape/defaultChunkSize.html">
+									<code>defaultChunkSize</code>
+								</a>
+							</td>
+							<td>
+							</td>
+							<td>Rows per chunk when <code class="lang-d"><span class="pln">stream</span></code> is called without an explicit size: single-row mode.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a id="hasChunkedRows" class="public" href="./jape/hasChunkedRows.html">
+									<code>hasChunkedRows</code>
+								</a>
+							</td>
+							<td>
+							</td>
+							<td>True when the libpq headers this was compiled against provide
+ PQsetChunkedRowsMode and PGRES_TUPLES_CHUNK, i.e. libpq 17 or newer.
+</td>
+						</tr>
+					</table>
+				</section>
+			</div>
+			<footer>
+				<div id="license-info">
+					
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+		<title>Struct Transaction</title>
+		<link rel="stylesheet" href="../css/style.min.css"/>
+		<script type="text/javascript" src="../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header></header>
+		<nav id="main-nav">
+			<div>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<form action="#" method="GET">
+						<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus/>
+					</form>
+					<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+document.getElementById('symbolSearchPane').style.display = 'block';</script>
+				</div>
+				<ul class="tree-view">
+					<li>
+						<a class="module selected" href="../jape.html">jape</a>
+				<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Access.html">Access</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Column.html">Column</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Connection.html">Connection</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyIn.html">CopyIn</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyOut.html">CopyOut</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/defaultChunkSize.html">defaultChunkSize</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Field.html">Field</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/hasChunkedRows.html">hasChunkedRows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Isolation.html">Isolation</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Function))" href="../jape/isRetryable.html">isRetryable</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Numeric.html">Numeric</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Class))" href="../jape/PgException.html">PgException</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/PreparedStatement.html">PreparedStatement</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Query.html">Query</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Result.html">Result</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Row.html">Row</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Rows.html">Rows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/RowStream.html">RowStream</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Savepoint.html">Savepoint</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Transaction.html">Transaction</a>
+				</li>
+				</ul>
+					</li>
+				</ul>
+			</div>
+			<p id="main-nav-footer">
+				Built with<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<div>
+				<h1>Struct Transaction</h1><p></p>
+				<div class="prototype">
+					<code class="lang-d">
+						<div class="single-prototype">
+				<span class="kwd">struct</span> <span class="typ">Transaction</span><span class="pun">;</span>
+						</div>
+					</code>
+				</div>
+				
+				<section><h2>Methods</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Transaction.commit.html" class="public">
+									<code>commit</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Makes the work permanent. Throws with SQLSTATE 25P02 when an earlier
+ statement had already failed, since the server rolls back instead.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Transaction.rollback.html" class="public">
+									<code>rollback</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Throws the work away now, rather than at the end of the scope.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Transaction.savepoint.html" class="public">
+									<code>savepoint</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>A restore point: lets you recover from an error without losing everything.
+</td>
+						</tr>
+					</table>
+				</section><section><h2>RAII</h2>
+<p>if you never call commit(), the destructor issues a ROLLBACK.
+</p>
+</section>
+
+			</div>
+			<footer>
+				<div id="license-info">
+					
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0"/>
+		<title>Struct Connection</title>
+		<link rel="stylesheet" href="../css/style.min.css"/>
+		<script type="text/javascript" src="../js/script.min.js"></script>
+	</head>
+	<body onload="setupDdox();">
+		<header></header>
+		<nav id="main-nav">
+			<div>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<form action="#" method="GET">
+						<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();" autofocus/>
+					</form>
+					<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+document.getElementById('symbolSearchPane').style.display = 'block';</script>
+				</div>
+				<ul class="tree-view">
+					<li>
+						<a class="module selected" href="../jape.html">jape</a>
+				<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Access.html">Access</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Column.html">Column</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Connection.html">Connection</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyIn.html">CopyIn</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/CopyOut.html">CopyOut</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/defaultChunkSize.html">defaultChunkSize</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Field.html">Field</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(EnumMember))" href="../jape/hasChunkedRows.html">hasChunkedRows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Enum))" href="../jape/Isolation.html">Isolation</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Function))" href="../jape/isRetryable.html">isRetryable</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Numeric.html">Numeric</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Class))" href="../jape/PgException.html">PgException</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/PreparedStatement.html">PreparedStatement</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Query.html">Query</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Result.html">Result</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Row.html">Row</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Rows.html">Rows</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/RowStream.html">RowStream</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Savepoint.html">Savepoint</a>
+				</li>
+				<li class="tree-view collapsed">
+					<a class="toLower(to!string(Struct))" href="../jape/Transaction.html">Transaction</a>
+				</li>
+				</ul>
+					</li>
+				</ul>
+			</div>
+			<p id="main-nav-footer">
+				Built with<a href="https://github.com/MartinNowak/scod">scod</a>
+			</p>
+		</nav>
+		<div id="main-contents">
+			<div>
+				<h1>Struct Connection</h1><p>Owns the PGconn. Non-copyable; the destructor calls PQfinish.
+</p>
+				<div class="prototype">
+					<code class="lang-d">
+						<div class="single-prototype">
+				<span class="kwd">struct</span> <span class="typ">Connection</span><span class="pun">;</span>
+						</div>
+					</code>
+				</div>
+				
+				<section><h2>Constructors</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.this.html" class="public">
+									<code>this</code>
+								</a>
+								<span class="tableEntryAnnotation">(conninfo)</span>
+							</td>
+							<td>Connects, or throws. <code class="lang-d"><a href="../jape/Connection.this.html#conninfo"><span class="pln">conninfo</span></a></code> is libpq's: <code class="lang-d"><span class="str">"host=… dbname=… user=…"</span></code>
+ or a <code class="lang-d"><span class="pln">postgresql</span><span class="pun">:</span><span class="com">//</span></code> URI.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section><h2>Properties</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Type</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.inErrorState.html" class="public property"><code>inErrorState</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Inside a transaction that already failed: only a rollback is accepted now.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.ok.html" class="public property"><code>ok</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether the connection is up. False after the server went away: see <code class="lang-d"><a href="../jape/Connection.reset.html"><span class="pln">reset</span></a></code>.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.preparedNames.html" class="public property"><code>preparedNames</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span><span class="pun">[]</span></code></td><td>The names of every statement prepared on this connection.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.serverVersion.html" class="public property"><code>serverVersion</code></a><span class="tableEntryAnnotation">[get]</span>
+							</td>
+							<td class="typecol"><code class="prettyprint lang-d"><span class="typ">int</span></code></td><td>The server version as a number: 160004 for 16.4.
+</td>
+						</tr>
+					</table>
+				</section>
+				<section><h2>Methods</h2>
+					<table>
+						<col class="caption"/>
+						<tr>
+							<th>Name</th><th>Description</th>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.copyIn.html" class="public">
+									<code>copyIn</code>
+								</a>
+								<span class="tableEntryAnnotation">(statement)</span>
+							</td>
+							<td>Starts a <code class="lang-d"><span class="pln">COPY </span><span class="pun">... </span><span class="pln">FROM STDIN</span></code>, the fastest way to load rows.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.copyOut.html" class="public">
+									<code>copyOut</code>
+								</a>
+								<span class="tableEntryAnnotation">(statement)</span>
+							</td>
+							<td>Starts a <code class="lang-d"><span class="pln">COPY </span><span class="pun">... </span><span class="pln">TO STDOUT</span></code> and hands back its lines, lazily.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.deallocateAll.html" class="public">
+									<code>deallocateAll</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Forgets every prepared statement, on the server and here. Use this rather
+ than sending <code class="lang-d"><span class="pln">deallocate</span></code> yourself, which would leave the two out of step.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.escapeIdentifier.html" class="public">
+									<code>escapeIdentifier</code>
+								</a>
+								<span class="tableEntryAnnotation">(s)</span>
+							</td>
+							<td>For dynamic table/column names: $n cannot stand in for an identifier.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.exec.html" class="public">
+									<code>exec</code>
+								</a>
+								<span class="tableEntryAnnotation">(sql, args)</span>
+							</td>
+							<td>Shorthand for when every value is available on the spot.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.execScript.html" class="public">
+									<code>execScript</code>
+								</a>
+								<span class="tableEntryAnnotation">(sql)</span>
+							</td>
+							<td>Several ';'-separated commands, WITHOUT parameters: PQexecParams accepts
+ only one command per call, so multi-statement has to go through PQexec,
+ which in turn has no binding. Use it for DDL and migrations, never with
+ values coming from outside.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.isPrepared.html" class="public">
+									<code>isPrepared</code>
+								</a>
+								<span class="tableEntryAnnotation">(name)</span>
+							</td>
+							<td>Whether <code class="lang-d"><a href="../jape/Connection.prepared.html"><span class="pln">prepared</span></a></code> would find something under this name.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.onNotice.html" class="public">
+									<code>onNotice</code>
+								</a>
+								<span class="tableEntryAnnotation">(handler)</span>
+							</td>
+							<td>Where NOTICE and WARNING messages go. Without this they are libpq's
+ problem, which means stderr — <code class="lang-d"><span class="pln">create table </span><span class="kwd">if </span><span class="pln">not exists</span></code> on an existing
+ table is enough to produce one, so a server that never calls this ends up
+ with someone else's log lines in its own.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.prepare.html" class="public">
+									<code>prepare</code>
+								</a>
+								<span class="tableEntryAnnotation">(name, text)</span>
+							</td>
+							<td>Has the server parse and plan a statement once, under a name, and keeps
+ enough about it that <code class="lang-d"><a href="../jape/Connection.prepared.html"><span class="pln">prepared</span></a></code> can hand it back later.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.prepared.html" class="public">
+									<code>prepared</code>
+								</a>
+								<span class="tableEntryAnnotation">(name)</span>
+							</td>
+							<td>The statement prepared earlier under this name, so it does not have to be
+ carried around. Only names this Connection prepared are known: the <code class="lang-d"><span class="pun">:<a href="../jape/Connection.prepared.html#name"></span><span class="pln">name</span></a></code>
+ placeholders are a client-side translation, so a statement prepared behind
+ our back — or one from the session before a <code class="lang-d"><a href="../jape/Connection.reset.html"><span class="pln">reset</span></a></code> — cannot be recovered.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.reset.html" class="public">
+									<code>reset</code>
+								</a>
+								<span class="tableEntryAnnotation">()</span>
+							</td>
+							<td>Reconnects with the same parameters. Prepared statements do not survive
+ it, since they lived in the old session: prepare them again afterwards.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.scalar.html" class="public">
+									<code>scalar</code>
+								</a>
+								<span class="tableEntryAnnotation">(sql, args)</span>
+							</td>
+							<td>One value: the first column of the first row, converted to <code class="lang-d"><span class="pln">T</span></code>.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.sql.html" class="public">
+									<code>sql</code>
+								</a>
+								<span class="tableEntryAnnotation">(text)</span>
+							</td>
+							<td>Names a statement without running it, so its values can be bound one at
+ a time and from different places. Nothing reaches the server until you
+ call <code class="lang-d"><a href="../jape/Connection.exec.html"><span class="pln">exec</span></a></code>, <code class="lang-d"><a href="../jape/Connection.scalar.html"><span class="pln">scalar</span></a></code> or <code class="lang-d"><a href="../jape/Connection.stream.html"><span class="pln">stream</span></a></code> on the result.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.stream.html" class="public">
+									<code>stream</code>
+								</a>
+								<span class="tableEntryAnnotation">(sql, args)</span>
+							</td>
+							<td>One row at a time, in constant memory: a lazy range of <code class="lang-d"><span class="pln">T</span></code>, a struct
+ mapped by column name or <code class="lang-d"><a href="../jape/Row.html"><span class="typ">Row</span></a></code> itself. The connection is busy until the
+ range is consumed or dropped.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.transact.html" class="public">
+									<code>transact</code>
+								</a>
+								<span class="tableEntryAnnotation">(work, isolation, access, attempts)</span>
+							</td>
+							<td>Runs <code class="lang-d"><a href="../jape/Connection.transact.html#work"><span class="pln">work</span></a></code> inside a transaction, committing it if it returns and rolling
+ it back if it throws — and running it again if the server says the
+ transaction lost a race.
+</td>
+						</tr>
+						<tr>
+							<td>
+								<a href="../jape/Connection.transaction.html" class="public">
+									<code>transaction</code>
+								</a>
+								<span class="tableEntryAnnotation">(isolation, access)</span>
+							</td>
+							<td>Begins a transaction, rolled back at the end of the scope unless committed.
+</td>
+						</tr>
+					</table>
+				</section>
+			</div>
+			<footer>
+				<div id="license-info">
+					
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

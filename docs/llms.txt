@@ -1,0 +1,53 @@
+# jape: PostgreSQL client for D
+
+jape (Just Another Postgres Elephant) is a thin, idiomatic PostgreSQL client for the D programming language. It wraps libpq, imported directly with ImportC (`libpq-fe.h`, no hand-written bindings), and turns it into D types with RAII and ranges. Version 0.2.1, MIT license.
+
+- Full reference: https://trikko.github.io/jape/llms-full.txt
+- Rules for agents: https://trikko.github.io/jape/AGENTS.md (as a skill: https://trikko.github.io/jape/SKILL.md)
+- API documentation: https://trikko.github.io/jape/
+- Source: https://github.com/trikko/jape
+
+## Core Concepts
+
+- **Connection**: owns the `PGconn`. Non-copyable, closed by its destructor. `Connection("host=... dbname=... user=...")`.
+- **Three verbs**: `exec` (whole result in memory), `scalar!T` (one value), `stream!T` (lazy range, one row at a time). Values always follow the SQL as bound parameters: `db.exec("... where id = $1", id)`.
+- **Query**: `db.sql(text)` names a statement without running it; `.bind("name", v)` / `.bind(1, v)` fill `:name` or `$n` placeholders; then one of the three verbs. An unbound placeholder is an error.
+- **PreparedStatement**: `db.prepare("name", sql)` parses once per session; `db.prepared("name")` gets it back anywhere.
+- **Result / Rows / Row / Field**: a reference-counted result; `Rows` is a `RandomAccessRange` of `Row`; `row["col"].as!T`, `row.as!Struct` (by column name, `@Column` to rename).
+- **Transaction**: rolls back unless `commit()`; isolation levels, read-only, `savepoint()`. `db.transact({ ... })` retries on serialization failures and deadlocks.
+- **CopyIn / CopyOut**: `COPY ... FROM STDIN` with `writeRow` and `commit`, `COPY ... TO STDOUT` as a lazy range of lines.
+- **Numeric**: exact decimal for `numeric` columns (no arithmetic: do it in SQL).
+- **PgException**: `sqlstate`, `constraint`, `detail`, `hint`, `position`, `full`.
+
+## Installation & Basic Usage
+
+`dub add jape`. Requires libpq with headers (`apt install libpq-dev`, `pacman -S postgresql-libs`, `brew install libpq`) and dmd or ldc2.
+
+```d
+import jape;
+
+struct User { int id; string name; int age; }
+
+void main()
+{
+    auto db = Connection("host=localhost dbname=app user=app");
+
+    db.exec("insert into users(name, age) values($1, $2)", "Ada", 36);
+    auto n = db.scalar!long("select count(*) from users where age >= $1", 18);
+
+    foreach (u; db.stream!User("select id, name, age from users order by id"))
+        writeln(u.id, " ", u.name);
+
+    auto rows = db.sql("select * from users where id = any(:ids)")
+                  .bind("ids", [1, 2, 3]).exec();
+    writeln(rows.length, " rows");
+}
+```
+
+## Types
+
+`numeric` → `Numeric` or `double`; `bytea` → `ubyte[]`; `json`/`jsonb` → `JSONValue`; `interval` → `Duration`; `time` → `TimeOfDay`; `date`/`timestamp(tz)` → `Date`/`SysTime`; arrays → D arrays (`Nullable!T[]` with NULL elements); NULL → `Nullable!T`.
+
+## Limits
+
+Text format only; no async API, no LISTEN/NOTIFY, no pipeline mode, no pool. One connection per process fits serverino, whose workers are processes: open it lazily, after the fork.
