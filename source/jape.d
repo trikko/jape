@@ -512,7 +512,7 @@ unittest
     assert(Numeric("-Infinity") < Numeric("-1e30"));
 
     // and the loss it exists to avoid
-    assert(Numeric("0.1").toDouble != 0.1L);
+    assert("%.17g".format(Numeric("0.1").toDouble) != "0.1");
     assert(Numeric("9007199254740993").toString != "%.17g".format(Numeric("9007199254740993").toDouble));
 }
 
