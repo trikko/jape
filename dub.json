@@ -10,9 +10,12 @@
 	"targetPath": "bin",
 	"sourcePaths": ["source"],
 	"importPaths": ["source"],
-	"sourceFiles": ["source/pq.c"],
+	"sourceFiles": ["source/jape_pq.c"],
 
 	"libs": ["pq"],
+
+	"-ddoxTool": "scod",
+	"-ddoxFilterArgs": ["--min-protection=Public", "--only-documented"],
 
 	"dflags-linux": ["-P=-I/usr/include/postgresql"],
 	"dflags-osx": ["-P=-I/opt/homebrew/opt/libpq/include", "-P=-I/usr/local/opt/libpq/include"],
