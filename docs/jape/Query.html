@@ -96,8 +96,8 @@ document.getElementById('symbolSearchPane').style.display = 'block';</script>
 		<div id="main-contents">
 			<div>
 				<h1>Struct Query</h1><p>A builder: it accumulates bindings at runtime and only hands everything to
- libpq on exec(). Values ALWAYS travel outside the SQL text, so they can
- never turn into syntax.
+ libpq on exec(). Values are always sent separately from the SQL text, as
+ bound parameters, so they can never be mistaken for SQL.
 </p>
 				<div class="prototype">
 					<code class="lang-d">

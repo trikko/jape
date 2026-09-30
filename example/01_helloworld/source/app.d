@@ -26,7 +26,7 @@ void main()
     writeln(db.scalar!string("select 'Hello, ' || $1 || '!'", "world"));
     writefln("server version %d", db.serverVersion);
 
-    // stream: one row at a time, and the values never touch the SQL text
+    // stream: one row at a time; the values are sent apart from the SQL text
     foreach (row; db.stream("select n, n * n as square from generate_series(1, $1) n", 5))
         writefln("  %d² = %d", row["n"].as!int, row["square"].as!int);
 }

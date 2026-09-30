@@ -14,7 +14,8 @@ library includes `libpq-fe.h` directly.
 ## Running a statement
 
 Three verbs, one per shape of answer. Each takes the SQL and its values, and the
-values never touch the SQL text.
+values are sent separately from the SQL text, as bound parameters: they can
+never be mistaken for SQL, so injection is not possible.
 
 ```d
 auto db = Connection("host=localhost dbname=app user=app");
@@ -479,8 +480,8 @@ with malloc. For large results keep the values, not the rows.
 There is no overload taking a string with the values already concatenated into
 it: parameters always travel in the separate array `PQexecParams` expects. The
 server parses the SQL — already complete — and only *then* binds the values into
-the placeholders, so a value can never become syntax. This is not escaping, it
-is a different channel.
+the placeholders, so a value can never be mistaken for SQL, whatever it
+contains. This is not escaping: the SQL and the values are sent separately.
 
 A declared-but-unbound parameter raises instead of silently passing as NULL,
 which is what catches a mistyped `:city`.

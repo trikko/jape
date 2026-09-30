@@ -3,8 +3,9 @@
  *
  * Open a `Connection`, run a statement with its values, and read the answer
  * the way that suits it: one value, all the rows, or one row at a time — as
- * rows, or straight into your own structs. The values always travel apart
- * from the SQL, so they can never turn into it.
+ * rows, or straight into your own structs. Values are sent to the server
+ * separately from the SQL text, as bound parameters, so they can never be
+ * mistaken for SQL: injection is not possible.
  *
  * Example:
  * ---
@@ -1351,8 +1352,8 @@ private string toText(T)(T value)
 
 /**
  * A builder: it accumulates bindings at runtime and only hands everything to
- * libpq on exec(). Values ALWAYS travel outside the SQL text, so they can
- * never turn into syntax.
+ * libpq on exec(). Values are always sent separately from the SQL text, as
+ * bound parameters, so they can never be mistaken for SQL.
  */
 struct Query
 {
