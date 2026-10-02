@@ -1,4 +1,4 @@
-<img align="left" alt="jape logo" width="100" height="100" src="https://trikko.github.io/jape/logo.svg">
+<img align="left" alt="jape logo" width="100" height="100" src="https://github.com/trikko/jape/raw/main/docs/logo.svg">
 
 # jape
 
