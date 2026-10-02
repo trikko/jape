@@ -1,6 +1,4 @@
-<img align="left" alt="jape logo" width="100" height="100" src="https://github.com/trikko/jape/raw/main/docs/logo.svg">
-
-# jape
+# <img align="left" alt="jape logo" width="100" height="100" src="https://github.com/trikko/jape/raw/main/docs/logo.svg"> jape
 
 [![CI](https://github.com/trikko/jape/actions/workflows/ci.yml/badge.svg)](https://github.com/trikko/jape/actions/workflows/ci.yml)
 [![DUB](https://img.shields.io/dub/v/jape)](https://code.dlang.org/packages/jape)
