@@ -1,3 +1,5 @@
+<img align="left" alt="jape logo" width="100" height="100" src="https://trikko.github.io/jape/logo.svg">
+
 # jape
 
 [![CI](https://github.com/trikko/jape/actions/workflows/ci.yml/badge.svg)](https://github.com/trikko/jape/actions/workflows/ci.yml)
