@@ -637,3 +637,11 @@ is the only one an acronym can use.
 Postgres, PostgreSQL and the Slonik Logo are trademarks or registered trademarks
 of the PostgreSQL Community Association of Canada, and used with their
 permission.
+
+## Feedback & support
+Using jape? I'd love to hear what you're building with it, or what's missing.
+Write to me: the address is just **oss**, at the domain of [my website](https://andreafontana.it).
+
+jape is built in my spare time. If it's useful to you or your company,
+consider [sponsoring me on GitHub](https://github.com/sponsors/trikko)
+or [buying me a beer on PayPal](https://paypal.me/andreafontana) ❤️
